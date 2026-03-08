@@ -2,12 +2,20 @@
 
 import { useState } from 'react';
 import { BrandProfile, CampaignBrief, ContentCalendarItem, GeneratedAsset, GenerationStatus } from '@/lib/types';
+
+interface CaptionSet {
+  dish: string;
+  en: string;
+  bm: string;
+  zh: string;
+}
 import { motion } from 'motion/react';
 import { Globe, Image as ImageIcon, Video, FileText, Calendar, Copy, Check } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import ImageGrid from '@/components/ImageGrid';
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse bg-white/10 rounded-xl ${className ?? ''}`} />;
+  return <div className={`skeleton-warm rounded-xl ${className ?? ''}`} />;
 }
 
 interface Props {
@@ -15,6 +23,7 @@ interface Props {
   campaignBrief: CampaignBrief;
   contentCalendar: ContentCalendarItem[];
   assets: GeneratedAsset[];
+  captions: CaptionSet[];
   generationStatus: GenerationStatus;
   onCsvExport: () => void;
   onRegenerateImages?: () => void;
@@ -25,12 +34,14 @@ export default function ResultsDashboard({
   campaignBrief,
   contentCalendar,
   assets,
+  captions,
   generationStatus,
   onCsvExport,
   onRegenerateImages,
 }: Props) {
   const [activeTab, setActiveTab] = useState<'website' | 'images' | 'videos' | 'captions' | 'calendar'>('website');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [captionLang, setCaptionLang] = useState<'en' | 'bm' | 'zh'>('en');
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -62,35 +73,37 @@ export default function ResultsDashboard({
   const videoAssets = assets.filter(a => a.type === 'video');
 
   return (
-    <div className="w-full flex flex-col lg:flex-row gap-8">
-      {/* Sidebar */}
-      <div className="w-full lg:w-64 flex-shrink-0">
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-4 sticky top-8">
-          <nav className="flex flex-col gap-2">
-            {tabs.map(tab => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                    isActive
-                      ? 'bg-[#E8470A]/20 text-[#E8470A]'
-                      : 'text-gray-400 hover:bg-white/5 hover:text-white'
-                  }`}
-                >
-                  <Icon size={20} />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </nav>
+    <div className="w-full flex flex-col">
+      {/* Sticky tab bar */}
+      <div className="sticky top-0 z-10 bg-[--dark]/80 backdrop-blur-md border-b border-white/10 mb-8">
+        <div className="flex relative overflow-x-auto">
+          {tabs.map(tab => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-6 py-4 font-mono text-xs uppercase tracking-widest whitespace-nowrap transition-colors relative flex-shrink-0 ${
+                  activeTab === tab.id ? 'text-[--orange]' : 'text-[--text-muted] hover:text-[--cream]'
+                }`}
+              >
+                <Icon size={14} />
+                {tab.label}
+                {activeTab === tab.id && (
+                  <motion.div
+                    layoutId="active-tab-bar"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-[--orange]"
+                    transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl p-8 min-h-[600px]">
+      {/* Tab content */}
+      <div className="bg-[--dark-2] border border-white/10 rounded-3xl p-8 min-h-[600px]">
 
         {/* Website Tab */}
         {activeTab === 'website' && (
@@ -103,19 +116,18 @@ export default function ResultsDashboard({
               className="h-full flex flex-col"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-display font-bold">Generated Website</h2>
+                <h2 className="font-display font-bold text-2xl text-[--cream]">Generated Website</h2>
                 <button
                   onClick={handleHtmlDownload}
-                  className="text-sm font-medium text-[#E8470A] hover:underline"
+                  className="text-sm font-mono text-[--orange] hover:underline"
                 >
                   Download HTML
                 </button>
               </div>
-
               {generationStatus.website === 'loading' && <Skeleton className="h-[500px]" />}
               {generationStatus.website === 'error' && (
                 <div className="p-6 rounded-2xl bg-red-500/10 border border-red-500/20 text-center">
-                  <p className="text-red-400 mb-3">Failed to generate website.</p>
+                  <p className="text-red-400 font-mono text-sm">Failed to generate website.</p>
                 </div>
               )}
               {generationStatus.website === 'done' && websiteAsset && (
@@ -141,63 +153,14 @@ export default function ResultsDashboard({
               transition={{ duration: 0.2 }}
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-display font-bold">Instagram Posts (Imagen 3)</h2>
+                <h2 className="font-display font-bold text-2xl text-[--cream]">Instagram Posts (Imagen 3)</h2>
                 {onRegenerateImages && (
-                  <button
-                    onClick={onRegenerateImages}
-                    className="text-sm font-medium text-[#E8470A] hover:underline"
-                  >
+                  <button onClick={onRegenerateImages} className="text-sm font-mono text-[--orange] hover:underline">
                     Regenerate All
                   </button>
                 )}
               </div>
-
-              {generationStatus.images === 'loading' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[1, 2, 3].map(i => <Skeleton key={i} className="aspect-square" />)}
-                </div>
-              )}
-              {generationStatus.images === 'error' && (
-                <div className="p-6 rounded-2xl bg-red-500/10 border border-red-500/20 text-center">
-                  <p className="text-red-400">Failed to generate images.</p>
-                </div>
-              )}
-              {generationStatus.images === 'done' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {imageAssets.map((img, idx) => (
-                    <div key={img.id} className="bg-black/20 rounded-2xl overflow-hidden border border-white/10 group">
-                      <div className="group relative aspect-square overflow-hidden rounded-t-2xl">
-                        <img
-                          src={img.url ?? ''}
-                          alt={`Generated image ${idx + 1}`}
-                          className="w-full h-full object-cover group-hover:brightness-75 transition-all duration-300"
-                        />
-                        <div className="absolute inset-0 flex items-end p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <a
-                            href={img.url ?? '#'}
-                            download={`post-${idx + 1}.png`}
-                            className="w-full py-2 rounded-lg bg-black/60 text-white text-sm font-medium text-center"
-                          >
-                            ⬇ Download
-                          </a>
-                        </div>
-                      </div>
-                      <div className="p-4">
-                        <p className="text-sm text-gray-400 line-clamp-2 mb-3">
-                          {(img.content as { en?: string })?.en}
-                        </p>
-                        <a
-                          href={img.url ?? '#'}
-                          download={`post-${idx + 1}.png`}
-                          className="w-full py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm font-medium text-center transition-colors block"
-                        >
-                          Download
-                        </a>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <ImageGrid images={imageAssets} status={generationStatus.images} />
             </motion.div>
           </ErrorBoundary>
         )}
@@ -212,18 +175,17 @@ export default function ResultsDashboard({
               transition={{ duration: 0.2 }}
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-display font-bold">TikTok / Reels (Veo 2)</h2>
+                <h2 className="font-display font-bold text-2xl text-[--cream]">TikTok / Reels (Veo 2)</h2>
               </div>
-
               {generationStatus.videos === 'loading' && (
                 <div className="flex flex-col items-center gap-4">
                   <Skeleton className="w-48 h-80" />
-                  <p className="text-gray-400 text-sm">Veo 2 is generating your video (~2–3 min)…</p>
+                  <p className="text-[--text-muted] font-mono text-sm">Veo 2 is generating your video (~2–3 min)…</p>
                 </div>
               )}
               {generationStatus.videos === 'error' && (
                 <div className="p-6 rounded-2xl bg-red-500/10 border border-red-500/20 text-center">
-                  <p className="text-red-400">Failed to start video generation.</p>
+                  <p className="text-red-400 font-mono text-sm">Failed to start video generation.</p>
                 </div>
               )}
               {generationStatus.videos === 'done' && (
@@ -232,25 +194,25 @@ export default function ResultsDashboard({
                     const isPending = vid.metadata?.status === 'pending';
                     const isCompleted = vid.metadata?.status === 'completed';
                     return (
-                      <div key={vid.id} className="bg-black/20 rounded-2xl overflow-hidden border border-white/10">
-                        <div className="aspect-[9/16] bg-gray-900 relative flex items-center justify-center">
+                      <div key={vid.id} className="bg-[--dark] rounded-2xl overflow-hidden border border-white/10">
+                        <div className="aspect-[9/16] bg-[--dark-2] relative flex items-center justify-center">
                           {isPending && (
                             <div className="text-center px-4">
-                              <div className="w-8 h-8 rounded-full border-2 border-[#E8470A] border-t-transparent animate-spin mx-auto mb-3" />
-                              <p className="text-gray-400 text-sm">Generating with Veo 2…</p>
+                              <div className="w-8 h-8 rounded-full border-2 border-[--orange] border-t-transparent animate-spin mx-auto mb-3" />
+                              <p className="text-[--text-muted] font-mono text-xs">Generating with Veo 2…</p>
                             </div>
                           )}
                           {isCompleted && vid.url && (
                             <video src={vid.url} controls className="w-full h-full object-cover" />
                           )}
                           {isCompleted && !vid.url && (
-                            <p className="text-gray-400 text-sm text-center px-4">
+                            <p className="text-[--text-muted] font-mono text-xs text-center px-4">
                               Video ready — check Cloud Console for URI
                             </p>
                           )}
                         </div>
                         <div className="p-4">
-                          <p className="text-sm text-gray-400 line-clamp-2">
+                          <p className="font-sans text-xs text-[--text-muted] line-clamp-2">
                             {isPending ? 'Video is being generated…' : 'Your Veo 2 video is ready.'}
                           </p>
                         </div>
@@ -273,49 +235,54 @@ export default function ResultsDashboard({
               transition={{ duration: 0.2 }}
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-display font-bold">Trilingual Captions (Gemini Flash)</h2>
+                <h2 className="font-display font-bold text-2xl text-[--cream]">Trilingual Captions</h2>
+                {/* Language pill switcher */}
+                <div className="flex gap-1 bg-[--dark] rounded-full p-1 border border-white/10">
+                  {(['en', 'bm', 'zh'] as const).map(lang => (
+                    <button
+                      key={lang}
+                      onClick={() => setCaptionLang(lang)}
+                      className={`px-4 py-1.5 rounded-full font-mono text-xs uppercase tracking-widest transition-all ${
+                        captionLang === lang
+                          ? 'bg-[--orange] text-white'
+                          : 'text-[--text-muted] hover:text-[--cream]'
+                      }`}
+                    >
+                      {lang === 'en' ? 'EN' : lang === 'bm' ? 'BM' : 'ZH'}
+                    </button>
+                  ))}
+                </div>
               </div>
-
-              {generationStatus.images === 'loading' && (
+              {captions.length === 0 && (
                 <div className="space-y-4">
                   {[1, 2, 3].map(i => <Skeleton key={i} className="h-32" />)}
                 </div>
               )}
-              {generationStatus.images === 'done' && (
-                <div className="space-y-6">
-                  {imageAssets.map((asset, idx) => {
-                    const copy = asset.content as { en?: string; bm?: string; zh?: string } | null;
-                    if (!copy) return null;
-                    return (
-                      <div key={asset.id} className="bg-black/20 rounded-2xl p-6 border border-white/10">
-                        <h3 className="text-lg font-bold mb-4">Post {idx + 1}</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                          {(['en', 'bm', 'zh'] as const).map(lang => (
-                            <div key={lang} className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold uppercase text-gray-500 tracking-wider">
-                                  {lang === 'en' ? 'English' : lang === 'bm' ? 'Bahasa Malaysia' : 'Mandarin'}
-                                </span>
-                                <button
-                                  onClick={() => handleCopy(copy[lang] ?? '', `${asset.id}-${lang}`)}
-                                  className="text-gray-400 hover:text-white transition-colors"
-                                >
-                                  {copiedId === `${asset.id}-${lang}` ? (
-                                    <Check size={16} className="text-green-500" />
-                                  ) : (
-                                    <Copy size={16} />
-                                  )}
-                                </button>
-                              </div>
-                              <p className="text-sm text-gray-300 bg-white/5 p-3 rounded-lg min-h-[100px]">
-                                {copy[lang]}
-                              </p>
-                            </div>
-                          ))}
+              {captions.length > 0 && (
+                <div className="space-y-4">
+                  {captions.map((cap, idx) => (
+                    <div key={idx} className="bg-[--dark] rounded-2xl p-6 border border-white/10">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h3 className="font-display font-bold text-[--cream]">Post {idx + 1}</h3>
+                          <p className="font-mono text-xs text-[--text-muted]">{cap.dish}</p>
                         </div>
+                        <button
+                          onClick={() => handleCopy(cap[captionLang], `cap-${idx}-${captionLang}`)}
+                          className="text-[--text-muted] hover:text-[--cream] transition-colors p-2"
+                        >
+                          {copiedId === `cap-${idx}-${captionLang}` ? (
+                            <Check size={16} className="text-[--green-brand]" />
+                          ) : (
+                            <Copy size={16} />
+                          )}
+                        </button>
                       </div>
-                    );
-                  })}
+                      <p className="text-sm text-[--cream] font-sans bg-white/5 p-4 rounded-xl min-h-[80px] leading-relaxed">
+                        {cap[captionLang]}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               )}
             </motion.div>
@@ -332,49 +299,46 @@ export default function ResultsDashboard({
               transition={{ duration: 0.2 }}
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-display font-bold">30-Day Content Calendar</h2>
+                <h2 className="font-display font-bold text-2xl text-[--cream]">30-Day Content Calendar</h2>
                 <button
                   onClick={onCsvExport}
-                  className="text-sm font-medium text-[#E8470A] hover:underline"
+                  className="text-sm font-mono text-[--orange] hover:underline"
                 >
                   Export CSV
                 </button>
               </div>
-
               {generationStatus.contentCalendar === 'loading' && (
                 <div className="space-y-2">
-                  {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-10" />)}
+                  {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-10 mb-2" />)}
                 </div>
               )}
               {generationStatus.contentCalendar === 'error' && (
                 <div className="p-6 rounded-2xl bg-red-500/10 border border-red-500/20 text-center">
-                  <p className="text-red-400">Failed to generate content calendar.</p>
+                  <p className="text-red-400 font-mono text-sm">Failed to generate content calendar.</p>
                 </div>
               )}
               {generationStatus.contentCalendar === 'done' && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-white/10 text-gray-400 text-sm">
-                        <th className="pb-3 font-medium">Day</th>
-                        <th className="pb-3 font-medium">Platform</th>
-                        <th className="pb-3 font-medium">Time</th>
-                        <th className="pb-3 font-medium">Format</th>
-                        <th className="pb-3 font-medium">Topic</th>
+                      <tr className="border-b border-white/10">
+                        {['Day', 'Platform', 'Time', 'Format', 'Topic'].map(h => (
+                          <th key={h} className="pb-3 font-mono text-xs uppercase tracking-widest text-[--text-muted]">{h}</th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody className="text-sm">
                       {contentCalendar.map((item, idx) => (
                         <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                          <td className="py-4 font-bold text-white">Day {item.day}</td>
-                          <td className="py-4 text-gray-300">{item.platform}</td>
-                          <td className="py-4 text-gray-300">{item.bestPostingTime}</td>
+                          <td className="py-4 font-display font-bold text-[--orange]">Day {item.day}</td>
+                          <td className="py-4 text-[--cream] font-sans">{item.platform}</td>
+                          <td className="py-4 text-[--cream] font-sans">{item.bestPostingTime}</td>
                           <td className="py-4">
-                            <span className="px-2 py-1 rounded-md bg-white/10 text-xs font-medium uppercase tracking-wider">
+                            <span className="px-2 py-1 rounded-md bg-white/10 font-mono text-xs uppercase tracking-wider text-[--text-muted]">
                               {item.postType}
                             </span>
                           </td>
-                          <td className="py-4 text-gray-300">{item.topic}</td>
+                          <td className="py-4 text-[--cream] font-sans">{item.topic}</td>
                         </tr>
                       ))}
                     </tbody>

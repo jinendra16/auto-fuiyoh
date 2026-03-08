@@ -1,11 +1,15 @@
 import { GoogleGenAI, type GenerateVideosOperation } from '@google/genai';
 
-const getVertexClient = () =>
-  new GoogleGenAI({
+const getVertexClient = () => {
+  if (!process.env.GOOGLE_CLOUD_PROJECT) {
+    throw new Error('GOOGLE_CLOUD_PROJECT is not set — Veo 2 requires Vertex AI credentials.');
+  }
+  return new GoogleGenAI({
     vertexai: true,
-    project: process.env.GOOGLE_CLOUD_PROJECT!,
+    project: process.env.GOOGLE_CLOUD_PROJECT,
     location: process.env.GOOGLE_CLOUD_REGION ?? 'us-central1',
   });
+};
 
 export async function startVideoGeneration(
   businessName: string,
@@ -33,19 +37,33 @@ export async function startVideoGeneration(
 export async function pollVideoOperation(
   operationName: string
 ): Promise<{ done: boolean; videoUri?: string; error?: string }> {
-  const ai = getVertexClient();
+  try {
+    const ai = getVertexClient();
 
-  const op = await ai.operations.getVideosOperation({
-    operation: { name: operationName } as unknown as GenerateVideosOperation,
-  });
+    // Mock the operation object to bypass the '@google/genai' SDK requirement
+    // for _fromAPIResponse, so we can directly access the raw JSON payload.
+    const dummyOp = {
+      name: operationName,
+      _fromAPIResponse: ({ apiResponse }: any) => apiResponse
+    } as unknown as GenerateVideosOperation;
 
-  if (op.done) {
-    if (op.error) {
-      return { done: true, error: String(op.error.message ?? 'Video generation failed') };
+    const op = await ai.operations.getVideosOperation({ operation: dummyOp }) as any;
+
+    if (op.done) {
+      if (op.error) {
+        return { done: true, error: op.error.message || 'Unknown video generation error' };
+      }
+      
+      const base64Bytes = op.response?.videos?.[0]?.bytesBase64Encoded;
+      if (base64Bytes) {
+        return { done: true, videoUri: `data:video/mp4;base64,${base64Bytes}` };
+      }
+      return { done: true, error: 'No video bytes returned from Vertex AI' };
     }
-    const uri = op.response?.generatedVideos?.[0]?.video?.uri;
-    return { done: true, videoUri: uri };
-  }
 
-  return { done: false };
+    return { done: false };
+  } catch (error: any) {
+    console.error('[veo] Status check failed:', error);
+    return { done: true, error: error.message };
+  }
 }
