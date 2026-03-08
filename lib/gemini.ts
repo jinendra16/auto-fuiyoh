@@ -99,9 +99,9 @@ You are an expert web developer and designer for Malaysian F&B businesses.
 Generate a complete, modern, mobile-first, single-file HTML website for the following business.
 Use inline CSS or Tailwind CSS via CDN.
 The website must include:
-- Hero section with business name, tagline, and a placeholder hero image (use https://picsum.photos/seed/{business_name}/1920/1080)
+- Hero section with business name, tagline, and a placeholder hero image (use https://TEMP_IMAGE_HERO)
 - About / Story section
-- Signature Menu Items section (use https://picsum.photos/seed/{dish_name}/800/600 for images)
+- Signature Menu Items section (use https://TEMP_IMAGE_DISH_0, https://TEMP_IMAGE_DISH_1, HTTPS://TEMP_IMAGE_DISH_2 for the first 3 dish images)
 - Operating Hours and Location
 - Contact / WhatsApp CTA button
 - Customer Reviews section

@@ -46,7 +46,7 @@ Prompts were dynamically constructed by combining user data (business name, sign
 
 ## 4. GitHub Link
 
-[Insert Public GitHub Repository URL Here]
+https://github.com/jinendra16/auto-fuiyoh
 
 ## 5. 1-Minute Demo Video
 
