@@ -1,3 +1,9 @@
+# Internal docs
+CLAUDE.md
+SUBMISSION.md
+auto-fuiyoh-prd.md
+claude_implementation_checklist.md
+
 # Environment variables
 .env.local
 .env*.local
