@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #E8470A;
+  --color-brand-dark: #c43d09;
+}
+
+@layer utilities {
+  .glass-card {
+    background: rgb(255 255 255 / 0.05);
+    border: 1px solid rgb(255 255 255 / 0.1);
+    backdrop-filter: blur(12px);
+  }
+  .text-gradient-brand {
+    background: linear-gradient(135deg, #E8470A, #ff8c5a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}

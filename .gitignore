@@ -1,0 +1,16 @@
+# Environment variables
+.env.local
+.env*.local
+
+# Credentials
+vertex-credentials*
+
+# Next.js
+.next/
+out/
+
+# Dependencies
+node_modules/
+
+# Build
+dist/
