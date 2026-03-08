@@ -49,8 +49,9 @@ jobs:
             --platform=managed \
             --allow-unauthenticated \
             --port=8080 \
-            --memory=1Gi \
+            --memory=2Gi \
             --cpu=1 \
             --min-instances=0 \
             --max-instances=10 \
+            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }},GOOGLE_CLOUD_REGION=us-central1" \
             --set-secrets="GEMINI_API_KEY=GEMINI_API_KEY:latest,GOOGLE_PLACES_API_KEY=GOOGLE_PLACES_API_KEY:latest"
