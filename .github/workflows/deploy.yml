@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  PROJECT_ID: auto-fuiyoh
+  PROJECT_ID: auto-fuyioh
   REGION: asia-southeast1
   SERVICE_NAME: auto-fuiyoh-app
   REPO: auto-fuiyoh
